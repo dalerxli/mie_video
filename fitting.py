@@ -15,13 +15,14 @@ import time
 
 class Video_Fitter(object):
 
-    def __init__(self, guesses, fn, background=None, dark_count=31):
+    def __init__(self, guesses, fn, fixed=['n_m', 'mpp', 'lamb'],
+                 background=None, dark_count=31):
         self.background = background
         self.dark_count = dark_count
         self._params = OrderedDict(zip(['x', 'y', 'z', 'a_p',
                                         'n_p', 'n_m', 'mpp', 'lamb'], guesses))
         self.fn = os.path.expanduser(fn)
-        self.fitter = Mie_Fitter(self.params)
+        self.fitter = Mie_Fitter(self.params, fixed=fixed)
         self.linked_df = localize(self.fn, background=self.background)
         self.trajectories = separate(self.linked_df)
         self.fit_df = None
