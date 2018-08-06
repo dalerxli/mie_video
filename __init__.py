@@ -1,4 +1,5 @@
-__all__ = ['tracking', 'fitting']
+__all__ = ['tracking', 'fitting', 'editing']
 
 from . import fitting
-import tracking
+from . import tracking
+from . import editing

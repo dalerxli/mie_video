@@ -59,7 +59,7 @@ def separate(trajectories):
         trajectories: Pandas DataFrame linked by trackpy.link(df)
     '''
     result = []
-    for idx in range(trajectories.particle.max() + 1):
+    for idx in range(int(trajectories.particle.max()) + 1):
         result.append(trajectories[trajectories.particle == idx])
     return result
 
