@@ -25,7 +25,7 @@ class Video_Fitter(object):
         self.fitter = Mie_Fitter(self.params, fixed=fixed)
         self.linked_df = localize(self.fn, background=self.background)
         self.trajectories = separate(self.linked_df)
-        self.fit_df = None
+        self.fit_dfs = []
 
     @property
     def params(self):
@@ -103,7 +103,7 @@ class Video_Fitter(object):
                 guesses.append(param.value)
             self.params = guesses
         cap.release()
-        self.fit_df = pd.DataFrame(data=data)
+        self.fit_df[trajectory] = pd.DataFrame(data=data)
 
     def test(self, guesses, trajectory=0, frame_no=0):
         '''
