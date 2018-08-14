@@ -2,59 +2,43 @@
 
 import cv2
 import numpy as np
-import os
 
 
-def background(f, file_type=".avi", folder=False,
-               shape=(640, 480)):
-    '''Randomly grab 100 frames from one video or a
-    folder of videos to get a normalized image
+def background(fn, shape=(640, 480)):
     '''
-    n_frames = 100
+    Return a background image from a video file
+    
+    Args:
+        fn: video filename
+    Keywords:
+        shape: shape of video frames
+    Returns:
+        bg: background image represented by np.ndarray
+            of size shape
+    '''
+    count = count_frames(fn)
+    n_frames = min(count, 100)
     frames = np.zeros((n_frames, shape[0], shape[1]),
                       dtype=np.float_)
-    if not folder:
-        file = f
-        count = count_frames(file)
-        for idx in range(n_frames):
-            rand_idx = np.random.choice(range(count))
-            cap = cv2.VideoCapture(file)
-            cap.set(1, rand_idx)
+    frame_nos = range(count)
+    for idx in range(n_frames):
+        frame_no = np.random.choice(frame_nos)
+        cap = cv2.VideoCapture(fn)
+        cap.set(1, frame_no)
+        ret, rand_frame = cap.read()
+        attempt = 0
+        while ret is False:
+            if attempt == 10:
+                print("Failed to read {} at frame {}".
+                      format(fn, frame_no))
+                break
             ret, rand_frame = cap.read()
-            i = 0
-            while ret is False:
-                if i == 10:
-                    print("Failed to read {} at frame {}".
-                          format(file, rand_idx))
-                    break
-                ret, rand_frame = cap.read()
-                i += 1
+            attempt += 1
+        if rand_frame is not None:
+            rand_frame = cv2.cvtColor(rand_frame, cv2.COLOR_BGR2GRAY)
             frames[idx] = rand_frame
-    else:
-        folder = f
-        directory = sorted(os.listdir(folder))
-        for idx in range(n_frames):
-            file = np.random.choice(directory)
-            while file.endswith(file_type) is False:
-                file = np.random.choice(directory)
-            path = os.path.join(folder, file)
-            count = count_frames(path)
-            rand_idx = np.random.choice(range(count))
-            cap = cv2.VideoCapture(path)
-            cap.set(1, rand_idx)
-            ret, rand_frame = cap.read()
-            idx = 0
-            while ret is False:
-                ret, rand_frame = cap.read()
-                idx += 1
-                if idx == 10:
-                    print("Failed to read {} at frame {}".
-                          format(file, rand_idx))
-                    break
-            frames[idx] = rand_frame
-    background = np.median(frames, axis=0)
-    dark_count = 31
-    return background, dark_count
+    bg = np.median(frames, axis=0)
+    return bg
 
 
 def count_frames(path):
@@ -92,8 +76,8 @@ def crop(image, xc, yc, w, h):
         w: width of crop
         h: height of crop
     '''
-    cropped_image = image[yc - h//2: yc + h//2,
-                          xc - w//2: xc + w//2].astype(float)
+    cropped_image = image[int(yc - h//2): int(yc + h//2),
+                          int(xc - w//2): int(xc + w//2)].astype(float)
     cropped_image /= np.mean(cropped_image)
     xdim, ydim = cropped_image.shape
     if xdim == ydim:
