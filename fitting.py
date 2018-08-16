@@ -16,6 +16,7 @@ import time
 class Video_Fitter(object):
 
     def __init__(self, guesses, fn, fixed=['n_m', 'mpp', 'lamb'],
+                 detection='oat', linked_df=None,
                  background=None, dark_count=31):
         self.background = background
         self.dark_count = dark_count
@@ -23,9 +24,14 @@ class Video_Fitter(object):
                                         'n_p', 'n_m', 'mpp', 'lamb'], guesses))
         self.fn = os.path.expanduser(fn)
         self.fitter = Mie_Fitter(self.params, fixed=fixed)
-        self.linked_df = localize(self.fn, background=self.background)
+        if linked_df is None:
+            self.linked_df = localize(self.fn,
+                                      background=self.background,
+                                      method=detection)
+        else:
+            self.linked_df = linked_df
         self.trajectories = separate(self.linked_df)
-        self.fit_dfs = []
+        self.fit_dfs = [None for _ in range(len(self.trajectories))]
 
     @property
     def params(self):
@@ -90,7 +96,11 @@ class Video_Fitter(object):
             print("Fit RedChiSq: " + str(fit.redchi))
             # Add fit to dataset
             for key in data.keys():
-                if key == 'frame':
+                if key == 'x':
+                    data[key].append(fit.params[key].value + x)
+                elif key == 'y':
+                    data[key].append(fit.params[key].value + y)
+                elif key == 'frame':
                     data[key].append(frame_no)
                 elif key == 'redchi':
                     data[key].append(fit.redchi)
@@ -103,7 +113,7 @@ class Video_Fitter(object):
                 guesses.append(param.value)
             self.params = guesses
         cap.release()
-        self.fit_df[trajectory] = pd.DataFrame(data=data)
+        self.fit_dfs[trajectory] = pd.DataFrame(data=data)
 
     def test(self, guesses, trajectory=0, frame_no=0):
         '''
